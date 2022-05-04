@@ -37,6 +37,8 @@ function transformPath(src) {
  * @returns {Promise<boolean>}
  */
 async function patch(resourceDir, patchDir) {
+  checkInstalled();
+  
   console.debug("Patching mod into electron app...", resourceDir, patchDir);
 
   resourceDir = transformPath(resourceDir);
@@ -116,6 +118,40 @@ async function unpatch(resourceDir) {
   return true;
 }
 
+async function installPnpm() {
+  console.log("Installing pnpm...");
+  try {
+    await child_process.execSync("npm i -g pnpm");
+  } catch (e) {
+    throw new Error("Failed to install pnpm");
+  }
+}
+
+/**
+ * Checks if node, npm and pnpm are installed
+ */
+function checkInstalled() {
+  console.log("Checking if node, npm and pnpm are installed...");
+  try {
+    child_process.execSync("node -v");
+  } catch (e) {
+    throw new Error("Node is not installed");
+  }
+
+  try {
+    child_process.execSync("npm -v");
+  } catch (e) {
+    throw new Error("Npm is not installed");
+  }
+
+  try {
+    child_process.execSync("pnpm -v");
+  } catch (e) {
+    installPnpm();
+  } 
+
+    
+}
 module.exports = {
   patch,
   unpatch,
