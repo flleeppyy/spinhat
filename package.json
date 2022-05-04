@@ -4,11 +4,24 @@
   "description": "Modded client for Reason+ Companion",
   "main": "none",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "prettier \"./**/*.{js,yml}\" --write "
+  },
+  "engines": {
+    "node": "14.16.0"
   },
   "author": "",
   "license": "ISC",
+  "devDependencies": {
+    "prettier": "^2.6.2"
+  },
+  "optionalDependencies": {
+    "asar": "^3.1.0",
+    "electron": "13.1.7",
+    "inspectpack": "^4.7.1"
+  },
   "dependencies": {
-    "electron": "^18.1.0"
+    "@types/node": "14.17.0",
+    "electron-devtools-installer": "^3.2.0",
+    "terser": "^5.13.1"
   }
 }

@@ -9,3 +9,7 @@ lerna-debug.log*
 dist
 build
 node_modules
+
+logo
+
+appasars
