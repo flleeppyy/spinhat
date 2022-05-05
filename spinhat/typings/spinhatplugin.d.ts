@@ -6,7 +6,8 @@ type settingsObject = {
 };
 
 type patch = {
-  for: "preload" | "webpreload" | "client",
+  for: "main" | "webpreload" | "client",
   match: string | RegExp,
+  moduleMatch: string | RegExp,
   replace: string | ((substring: string, ...args: any[]) => string),
 };

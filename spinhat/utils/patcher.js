@@ -5,7 +5,7 @@ const child_process = require("child_process");
 
 async function killrp() {
   // Kill "Reason+ Companion.exe"
-  console.log("Killing any instances Reason+ Companion.exe if exists...");
+  console.log("Killing any instances Reason+ Companion.exe they're running...");
   try {
     child_process.execSync('taskkill /F /T /IM "Reason+ Companion.exe"');
   } catch (e) {
@@ -38,7 +38,7 @@ function transformPath(src) {
  */
 async function patch(resourceDir, patchDir) {
   checkInstalled();
-  
+
   console.debug("Patching mod into electron app...", resourceDir, patchDir);
 
   resourceDir = transformPath(resourceDir);
@@ -68,7 +68,7 @@ async function patch(resourceDir, patchDir) {
   console.debug("Creating app directory...");
   await fs.promises.mkdir(path.join(resourceDir, "app"));
 
-  const injector = path.join(patchDir, "libs", "injector.js");
+  const injector = path.join(patchDir, "spinhat", "main.js");
 
   // Write index
   console.debug("Writing index.js...");
@@ -80,7 +80,7 @@ async function patch(resourceDir, patchDir) {
     path.join(resourceDir, "app", "package.json"),
     JSON.stringify(
       {
-        name: "patcher",
+        name: "Reason+ Companion",
         main: "index.js",
       },
       null,
@@ -148,9 +148,11 @@ function checkInstalled() {
     child_process.execSync("pnpm -v");
   } catch (e) {
     installPnpm();
-  } 
+  }
 
-    
+  console.log("All dependencies are installed!");
+
+
 }
 module.exports = {
   patch,

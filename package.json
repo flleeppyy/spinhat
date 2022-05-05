@@ -1,7 +1,7 @@
 {
   "name": "spinhat",
   "version": "1.0.0",
-  "description": "Modded client for Reason+ Companion",
+  "description": "Reason+ Companion Improvement Project",
   "main": "none",
   "scripts": {
     "lint": "prettier \"./**/*.{js,yml}\" --write "
