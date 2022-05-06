@@ -39,6 +39,8 @@ Electron.safeStorage = {
   isEncryptionAvailable: () => false,
 };
 
+
+
 // Replace the BrowserWindow constructor
 class BrowserWindow extends Electron.BrowserWindow {
   /**
@@ -104,6 +106,26 @@ const rspAsarPath = path.join(path.dirname(require.main.filename), "..", "app.as
 
 // @ts-ignore
 Electron.app.whenReady().then(() => {
+
+  const devwindow = new Electron.BrowserWindow({
+    title: "Dev stuff",
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      // preload: path.join(__dirname, "preload.js"),
+      enableRemoteModule: true,
+      devTools: true,
+      webSecurity: false,
+      allowRunningInsecureContent: true,
+    },
+    show: true,
+  });
+
+devwindow.loadURL("chrome://chrome-urls");
+
+
   installExtension(REACT_DEVELOPER_TOOLS)
     .then((name) => console.log(`Added Devtools Extension: ${name}`))
     .catch((error) => console.log("An error occurred:", error));
@@ -148,21 +170,29 @@ global.spinhat = {
 
 loadPlugins();
 
-for (const plugin in spinhat.plugins) {
-  console.log(plugin)
+for (const pluginname in spinhat.plugins) {
+  const plugin = spinhat.plugins[pluginname];
+
   if (plugin.patches) {
+    console.log("Patching: " + plugin.patches.length + " patches");
     pluginPatchesThing: for (const patch of plugin.patches) {
       if (patch.for === "main") {
+        console.log(patch);
+        if (typeof patch.moduleMatch !== "string" && !(patch.moduleMatch instanceof RegExp)) {
+          console.error("Invalid moduleMatch");
+          continue pluginPatchesThing;
+        }
         modulething: for (const module in sm__webpack_require__.m) {
+          /**
+           * @type {string}
+           */
           const moduleRaw = sm__webpack_require__.m[module].toString();
-          console.log(moduleRaw);
-          // If our patch is a string
-          if (typeof patch.match === "string" && (moduleRaw.indexOf(patch.match) == -1)) {
-            continue;
+          if (moduleRaw.match(patch.moduleMatch) ) {
+            const rawPatchedPlugin = moduleRaw.replace(patch.match, patch.replace);
+            const wrappedPatchedPlugin = `( ${rawPatchedPlugin} ).apply(this, arguments)`
+            sm__webpack_require__.m[module] = new Function("exports", "module", "require", "__dirname", "__filename", wrappedPatchedPlugin);
+            break modulething;
           }
-
-          sm__webpack_require__.m[module] = moduleRaw.replace(patch.moduleMatch, patch.replace);
-          break modulething;
         }
       }
     }
