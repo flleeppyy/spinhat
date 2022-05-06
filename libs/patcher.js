@@ -61,6 +61,10 @@ async function patch(resourceDir, patchDir) {
     }
   }
 
+  // CHeck if the app dir still exists
+  if (fs.existsSync(path.join(resourceDir, "app"))) {
+    throw new Error(`${path.join(resourceDir, "app")} still exists even after we deleted it. Please delete it manually, then repatch.`);
+  }
   // Kill instances of Reason Companion
   await killrp();
 
@@ -88,11 +92,43 @@ async function patch(resourceDir, patchDir) {
     ),
   );
 
+  // Run pnpm install in the previous directory
+  console.debug("Running pnpm install...");
+  await pnpmInstall(path.join(__dirname, "../"));
+  
   console.debug("Patching complete!");
+  
 
   return true;
 }
 
+async function pnpmInstall(dir) {
+  console.log("Installing dependencies...");
+  try {
+    // await child_process.execFileSync("pnpm", ["install"], { cwd: dir });
+  const exec = child_process.spawn("pnpm", ["install"], { cwd: dir });
+
+  exec.stdout.pipe(process.stdout);
+  // Wait for pnpm install to finish
+  try {
+    await new Promise((resolve, reject) => {
+      exec.on("exit", (code) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error("pnpm install failed. " + exec.stderr.read().toString()));
+        }
+      });
+
+      exec.on("error", (err) => {
+        reject(err);
+      });
+
+    });
+  } catch (e) {
+    throw e;
+  }
+}
 /**
  *
  * @param {string} resourceDir Path to the resource directory
