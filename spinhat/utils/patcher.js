@@ -104,11 +104,11 @@ async function patch(resourceDir, patchDir) {
 
 async function pnpmInstall(dir) {
   console.log("Installing dependencies...");
-  try {
-    // await child_process.execFileSync("pnpm", ["install"], { cwd: dir });
   const exec = child_process.spawn("pnpm", ["install"], { cwd: dir });
 
   exec.stdout.pipe(process.stdout);
+  exec.stderr.pipe(process.stderr);
+  
   // Wait for pnpm install to finish
   try {
     await new Promise((resolve, reject) => {
@@ -123,7 +123,6 @@ async function pnpmInstall(dir) {
       exec.on("error", (err) => {
         reject(err);
       });
-
     });
   } catch (e) {
     throw e;
