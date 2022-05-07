@@ -107,23 +107,23 @@ const rspAsarPath = path.join(path.dirname(require.main.filename), "..", "app.as
 // @ts-ignore
 Electron.app.whenReady().then(() => {
 
-  const devwindow = new Electron.BrowserWindow({
-    title: "Dev stuff",
-    width: 800,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      // preload: path.join(__dirname, "preload.js"),
-      enableRemoteModule: true,
-      devTools: true,
-      webSecurity: false,
-      allowRunningInsecureContent: true,
-    },
-    show: true,
-  });
+  // const devwindow = new Electron.BrowserWindow({
+  //   title: "Dev stuff",
+  //   width: 800,
+  //   height: 600,
+  //   webPreferences: {
+  //     nodeIntegration: true,
+  //     contextIsolation: false,
+  //     // preload: path.join(__dirname, "preload.js"),
+  //     enableRemoteModule: true,
+  //     devTools: true,
+  //     webSecurity: false,
+  //     allowRunningInsecureContent: true,
+  //   },
+  //   show: true,
+  // });
 
-devwindow.loadURL("chrome://chrome-urls");
+  // devwindow.loadURL("chrome://chrome-urls");
 
 
   installExtension(REACT_DEVELOPER_TOOLS)
