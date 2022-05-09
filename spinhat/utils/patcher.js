@@ -95,9 +95,8 @@ async function patch(resourceDir, patchDir) {
   // Run pnpm install in the previous directory
   console.debug("Running pnpm install...");
   await pnpmInstall(path.join(__dirname, "../"));
-  
+
   console.debug("Patching complete!");
-  
 
   return true;
 }
@@ -108,7 +107,7 @@ async function pnpmInstall(dir) {
 
   exec.stdout.pipe(process.stdout);
   exec.stderr.pipe(process.stderr);
-  
+
   // Wait for pnpm install to finish
   try {
     await new Promise((resolve, reject) => {
@@ -186,8 +185,6 @@ function checkInstalled() {
   }
 
   console.log("All dependencies are installed!");
-
-
 }
 module.exports = {
   patch,

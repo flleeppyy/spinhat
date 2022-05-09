@@ -10,9 +10,7 @@ module.exports = class ToolbarEdits extends SpinHatPlugin {
       for: "main",
       moduleMatch: /{role:"reload"},{type:"separator"},{role:"togglefullscreen"}/,
       match: /{role:"reload"},/,
-      replace: (original) => {
-        return original + `{role:"toggledevtools"},`
-      },
+      replace: (original) => original + `{role:"toggledevtools"},`,
     },
   ];
-}
+};

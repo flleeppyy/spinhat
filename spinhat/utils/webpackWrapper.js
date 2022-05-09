@@ -114,12 +114,35 @@ function webpack(modules, entrypoint, webpackPrefix = "", callImmediately = fals
       Object.defineProperty(exports, '__esModule', { value: true });
     };
   })();
+
+  /* webpack/runtime/publicPath */
+  // (() => {
+  //   var scriptUrl;
+  //   if (__webpack_require__.g.importScripts) scriptUrl = __webpack_require__.g.location + "";
+  //   var document = __webpack_require__.g.document;
+  //   if (!scriptUrl && document) {
+  //     if (document.currentScript)
+  //       scriptUrl = document.currentScript.src
+  //     if (!scriptUrl) {
+  //       var scripts = document.getElementsByTagName("script");
+  //       if(scripts.length) scriptUrl = scripts[scripts.length - 1].src
+  //     }
+  //   }
+  //   // When supporting browsers where an automatic publicPath is not supported you must specify an output.publicPath manually via configuration
+  //   // or pass an empty string ("") and set the __webpack_public_path__ variable from your code to use your own logic.
+  //   if (!scriptUrl) throw new Error("Automatic publicPath is not supported in this browser");
+  //   scriptUrl = scriptUrl.replace(/#.*$/, "").replace(/\?.*$/, "").replace(/\/[^\/]+$/, "/");
+  //   __webpack_require__.p = scriptUrl + "../../";
+  // })();
   var __webpack_exports__ = {};
 
   __webpack_require__.nmd = (t) => ((t.paths = []), t.children || (t.children = []), t);
 
-  exports["default"] = __webpack_exports__["default"];
-  Object.defineProperty(exports, "__esModule", { value: true });
+  //hacky, i dont know what im doing actually.
+  globalThis.exports ? (
+    (exports["default"] = __webpack_exports__["default"]),
+    (Object.defineProperty(exports, "__esModule", { value: true }))
+  ) : null ;
   //__webpack_require__((__webpack_require__.s = ${entrypoint}));
 
   // expose the modules object (__webpack_modules__)
@@ -141,12 +164,16 @@ function webpack(modules, entrypoint, webpackPrefix = "", callImmediately = fals
 
   __webpack_require__.load = load;
 
-${callImmediately ? `
+${
+  callImmediately
+    ? `
   // Load entry module
   return load();
   // return __webpack_require__((__webpack_require__.s = ${entrypoint}));
-` : ""}
-})()`
+`
+    : ""
+}
+})()`;
 
   return returnstring;
 }
@@ -166,20 +193,27 @@ function wrapWebpack(filename, webpackPrefix = "", callImmediately = false) {
   let file = readFileSync(filename, "utf8");
 
   let entrypoint = null;
+  // grab the modules variable because regex will commit the funny catastrophic backtracking if we do like
+  // /\(\(\)=>{var .=
+  // the . before the = is what causes the catastrophic backtracking
+  // const modulesVar = file.split("\n")[1].slice(10,11);
+  // const modulesVar = file.split("\n")[1].split("(()=>{var ")[1].split("=")[0]
 
-  file = file.replace(/\(\(\)=>{var t=({.*}}),e={};.*n\(n\.s=(.*)\)}\)\(\);/, (original, modulesObject, entryPointModule) => {
+  // const reg = new RegExp(`/\(\(\)=>{var .=({.*}}),e={};.*n\(n\.s=(.*)\)}\)\(\);/`);
+  const reg = /\(\(\)=>{var .=({.*}}),[a-z]={};.*,(?:n\(n\.s=(.*)\)|(?:n\((.{0,5})\)))}\)\(\);/;
+  file = file.replace(reg, (original, modulesObject, entryPointModule, otherEntryPointModule) => {
     entrypoint = entryPointModule;
-    return webpack(modulesObject, parseInt(entryPointModule), webpackPrefix, callImmediately);
+    return webpack(modulesObject, parseInt(entryPointModule || otherEntryPointModule), webpackPrefix, callImmediately);
   });
-  // console.log(file);
+  // writeFileSync(__dirname + "/fuckingshit.js", file);
 
-  // write the file
+  // Return an object with the webpack's buffer and the entrypoint
   return {
     buffer: Buffer.from(file),
     entrypoint,
-  }
+  };
 }
 
 module.exports = {
   wrapWebpack,
-}
+};

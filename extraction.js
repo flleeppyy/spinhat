@@ -26,13 +26,12 @@ Asar.extractAll(rcpath, prettyOutPath);
 
 child_process.execSync(`.\\node_modules\\.bin\\prettier "appasars/${version}/pretty/**/*.{js,yml,json,html}" --write `, {
   cwd: process.cwd(),
-  stdio: "inherit"
+  stdio: "inherit",
 });
 
 // Delete files from "pretty/build" that do not end in yml,js,json,or html
-fs.readdirSync(path.join(process.cwd(), "appasars", version, "pretty", "build")).forEach(file => {
+fs.readdirSync(path.join(process.cwd(), "appasars", version, "pretty", "build")).forEach((file) => {
   if (!file.endsWith(".yml") && !file.endsWith(".js") && !file.endsWith(".json") && !file.endsWith(".html")) {
     fs.unlinkSync(path.join(process.cwd(), "appasars", version, "pretty", "build", file));
   }
 });
-

@@ -13,5 +13,5 @@ async function getMinifiedFunctionBody(fn) {
 }
 module.exports = {
   getFunctionBody,
-  getMinifiedFunctionBody
-}
+  getMinifiedFunctionBody,
+};

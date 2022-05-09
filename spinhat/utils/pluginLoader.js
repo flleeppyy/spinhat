@@ -7,7 +7,7 @@ module.exports = function loadPlugins() {
   const pluginsPath = path.join(__dirname, "..", "plugins");
   const pluginFiles = readdirSync(pluginsPath);
   for (const pluginFile of pluginFiles) {
-    const pluginPath = path.resolve(pluginsPath,pluginFile);
+    const pluginPath = path.resolve(pluginsPath, pluginFile);
     if (pluginFile.endsWith(".js")) {
       try {
         spinhat.plugins[pluginPath.replace(/\.js/, "")] = pluginParser(pluginPath);
@@ -16,4 +16,4 @@ module.exports = function loadPlugins() {
       }
     }
   }
-}
+};

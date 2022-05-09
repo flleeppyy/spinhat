@@ -39,5 +39,4 @@ module.exports = class SpinHatPlugin {
    * @type {() => void | undefined}
    */
   onLoad;
-
-}
+};
