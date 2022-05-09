@@ -14,17 +14,12 @@
 const Module = require("module");
 const Electron = require("electron");
 const path = require("path");
+const { readFileSync, writeFileSync } = require("fs");
 const asar = require("asar");
 const { wrapWebpack } = require("./utils/webpackWrapper");
 const SpinHatPlugin = require("./classes/SpinHatPlugin");
 const loadPlugins = require("./utils/pluginLoader");
-// Import electron devtools
-const {
-  default: installExtension,
-  REACT_DEVELOPER_TOOLS,
-  REDUX_DEVTOOLS,
-} = require("electron-devtools-installer");
-
+const { installExtensions } = require("./utils/installExtensions");
 
 console.log("We've been injected! Hello from spinhat!");
 
@@ -38,8 +33,6 @@ Electron.safeStorage = {
   },
   isEncryptionAvailable: () => false,
 };
-
-
 
 // Replace the BrowserWindow constructor
 class BrowserWindow extends Electron.BrowserWindow {
@@ -71,19 +64,55 @@ class BrowserWindow extends Electron.BrowserWindow {
     opts.webPreferences.worldSafeExecuteJavaScript = false;
     opts.webPreferences.nodeIntegration = true;
     opts.webPreferences.enableRemoteModule = true;
-    // opts.webPreferences.contextIsolation = false;
-
-
     opts.webPreferences.preload = require.resolve("../spinhat/webPreload");
+    opts.webPreferences.webSecurity = false;
+
     // @ts-ignore
     super(opts, ...args);
 
-
-    this.webContents.on("did-finish-load", () => {
+    this.webContents.on("did-frame-finish-load", async () => {
+      await installExtensions();
       this.webContents.openDevTools({
         mode: "detach",
       });
     });
+    Electron.app.whenReady().then(() => {
+      // const devwindow = new Electron.BrowserWindow({
+      //   title: "Dev stuff",
+      //   width: 800,
+      //   height: 600,
+      //   webPreferences: {
+      //     nodeIntegration: true,
+      //     contextIsolation: false,
+      //     // preload: path.join(__dirname, "preload.js"),
+      //     enableRemoteModule: true,
+      //     devTools: true,
+      //     webSecurity: false,
+      //     allowRunningInsecureContent: true,
+      //   },
+      //   show: true,
+      // });
+      // devwindow.loadURL("chrome://chrome-urls");
+    });
+  }
+
+  // Modify the html file and replace the script with our client script
+  // usually the script tag is <script defer="defer" src="client.js"></script>
+  loadFile(filePath, options) {
+    console.info(filePath);
+    if (filePath.endsWith("\\client\\index.html")) {
+      const file = readFileSync(filePath, "utf-8");
+      let newFile = file.replace(
+        /<script .*client.js"><\/script>/,
+        `<script defer="defer" src="${require.resolve("../spinhat/client")}"></script>`,
+      );
+      // remove csp header
+      newFile = newFile.replace(/<meta http-equiv="Content-Security-Policy" .*segment\.com;"\/>/, "");
+      // write file
+      writeFileSync(path.join(__dirname, "index.html"), newFile, "utf-8");
+      return super.loadFile(path.join(__dirname, "index.html"), options);
+    }
+    super.loadFile(filePath, options);
   }
 }
 
@@ -100,40 +129,10 @@ const electronProxy = new Proxy(Electron, {
 delete require.cache[require.resolve("electron")].exports;
 require.cache[require.resolve("electron")].exports = electronProxy;
 
-const rspResourcesPath = path.join(path.dirname(require.main.filename), "..",);
+const rspResourcesPath = path.join(path.dirname(require.main.filename), "..");
 const rspAsarPath = path.join(path.dirname(require.main.filename), "..", "app.asar");
 
-
 // @ts-ignore
-Electron.app.whenReady().then(() => {
-
-  // const devwindow = new Electron.BrowserWindow({
-  //   title: "Dev stuff",
-  //   width: 800,
-  //   height: 600,
-  //   webPreferences: {
-  //     nodeIntegration: true,
-  //     contextIsolation: false,
-  //     // preload: path.join(__dirname, "preload.js"),
-  //     enableRemoteModule: true,
-  //     devTools: true,
-  //     webSecurity: false,
-  //     allowRunningInsecureContent: true,
-  //   },
-  //   show: true,
-  // });
-
-  // devwindow.loadURL("chrome://chrome-urls");
-
-
-  installExtension(REACT_DEVELOPER_TOOLS)
-    .then((name) => console.log(`Added Devtools Extension: ${name}`))
-    .catch((error) => console.log("An error occurred:", error));
-  installExtension(REDUX_DEVTOOLS)
-    .then((name) => console.log(`Added Redux Devtools Extension: ${name}`))
-    .catch((error) => console.log("An error occurred:", error));
-});
-
 
 const rcPackage = require(path.join(rspAsarPath, "package.json"));
 Electron.app.setName(rcPackage.name);
@@ -165,7 +164,7 @@ global.spinhat = {
   /**
    * @type {{[key: string]: SpinHatPlugin}}
    */
-  plugins: {}
+  plugins: {},
 };
 
 loadPlugins();
@@ -175,23 +174,26 @@ for (const pluginname in spinhat.plugins) {
 
   if (plugin.patches) {
     console.log("Patching: " + plugin.patches.length + " patches");
-    pluginPatchesThing: for (const patch of plugin.patches) {
+    for (const patch of plugin.patches) {
       if (patch.for === "main") {
-        console.log(patch);
-        if (typeof patch.moduleMatch !== "string" && !(patch.moduleMatch instanceof RegExp)) {
-          console.error("Invalid moduleMatch");
-          continue pluginPatchesThing;
+        if (patch.moduleMatch && typeof patch.moduleMatch !== "string" && !(patch.moduleMatch instanceof RegExp)) {
+          console.error("Invalid moduleMatch for patch: " + patch.module);
+          continue;
         }
-        modulething: for (const module in sm__webpack_require__.m) {
-          /**
-           * @type {string}
-           */
-          const moduleRaw = sm__webpack_require__.m[module].toString();
-          if (moduleRaw.match(patch.moduleMatch) ) {
+        for (const moduleId in sm__webpack_require__.m) {
+          const moduleRaw = sm__webpack_require__.m[moduleId].toString();
+          if (moduleRaw.match(patch.moduleMatch)) {
             const rawPatchedPlugin = moduleRaw.replace(patch.match, patch.replace);
-            const wrappedPatchedPlugin = `( ${rawPatchedPlugin} ).apply(this, arguments)`
-            sm__webpack_require__.m[module] = new Function("exports", "module", "require", "__dirname", "__filename", wrappedPatchedPlugin);
-            break modulething;
+            const wrappedPatchedPlugin = `( ${rawPatchedPlugin} ).apply(this, arguments)`;
+            sm__webpack_require__.m[moduleId] = new Function(
+              "exports",
+              "module",
+              "require",
+              "__dirname",
+              "__filename",
+              `${wrappedPatchedPlugin}\n/*# sourceURL=${moduleId}*/`,
+            );
+            break;
           }
         }
       }
@@ -200,4 +202,3 @@ for (const pluginname in spinhat.plugins) {
 }
 
 sm__webpack_require__.load();
-

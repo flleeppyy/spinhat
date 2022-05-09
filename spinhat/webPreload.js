@@ -1,16 +1,17 @@
-const {readFileSync, readdirSync, fstat, writeFileSync} = require("fs");
+const { readFileSync, readdirSync, fstat, writeFileSync } = require("fs");
 const path = require("path");
 const SpinHatPlugin = require("./classes/SpinHatPlugin");
 const { contextBridge } = require("electron");
 const { wrapWebpack } = require("./utils/webpackWrapper");
 const loadPlugins = require("./utils/pluginLoader");
 
-const preloadFilePath = path.join(window.location.pathname.slice(1), "../../preload.js");
-const clientFilePath = path.join(window.location.pathname.slice(1), "../client.js");
+const baseAsarPath = path.join(process.cwd(), "resources", "app.asar");
+const preloadFilePath = path.join(baseAsarPath, "build", "preload.js");
+const clientFilePath = path.join(baseAsarPath, "build", "client", "client.js");
+
 
 global.spinhat = {
   plugins: {},
-  loadedPlugins: {},
 };
 
 loadPlugins();
@@ -66,35 +67,14 @@ for (const plugin in spinhat.plugins) {
 // let webpreloadScript = readFileSync(preloadFilePath, "utf8");
 // let clientScript = readFileSync(clientFilePath, "utf8");
 
-let webpreloadScript = wrapWebpack(preloadFilePath, "", true);
+let webpreloadScript = wrapWebpack(preloadFilePath, "wp", false);
 let clientScript = wrapWebpack(clientFilePath, "sm", false);
-// Apply patches
-patches.forEach(patch => {
-  console.log(patch);
-  if (patch.for === "webpreload") {
-    // const match = preload.match(patch.match);
-    webpreloadScript = webpreloadScript.replace(patch.match, patch.replace);
-  }
-  else if (patch.for === "client") {
-    clientScript = clientScript.replace(patch.match, patch.replace);
-  }
-});
 
-// I have no idea if I'm doing this right
-spinhat.getClientScript = () => {
-  return clientScript;
-}
-
-// Replace script tag that links to client.js, to our own client.js
-document.onload = () => {
-  // get script where defer = "defer" and src ="client.js"
-  const script = document.querySelector("script[defer][src='client.js']");
-  // replace src with our own client.js
-  script.src = path.join(__dirname, "client.js");
-}
+spinhat.getClientScript = () => clientScript;
 
 contextBridge.exposeInMainWorld("spinhat", global.spinhat);
-// execute the patched code. probably a terrible idea but oh well it kinda doesnt matter
+
+// execute the patched code. probably a terrible way to load this but oh well it kinda doesnt matter
 try {
   var m = new module.constructor();
   m.paths = module.paths;
@@ -102,3 +82,30 @@ try {
 } catch (e) {
   console.error("Error during webPreload", e);
 }
+
+// console.log(wp__webpack_require__);
+for (const patch of patches) {
+  if (patch.for === "webpreload") {
+    if (patch.moduleMatch && (typeof patch.moduleMatch !== "string" && !(patch.moduleMatch instanceof RegExp))) {
+      console.error("Invalid moduleMatch for patch: " + patch.module);
+      continue;
+    }
+    for (const moduleId in wp__webpack_require__.m) {
+      const moduleRaw = wp__webpack_require__.m[moduleId].toString();
+      if (moduleRaw.match(patch.moduleMatch)) {
+        const rawPatchedPlugin = moduleRaw.replace(patch.match, patch.replace);
+        const wrappedPatchedPlugin = `( ${rawPatchedPlugin} ).apply(this, arguments) //# sourceURL=${moduleId}`;
+        wp__webpack_require__.m[moduleId] = new Function(`${wrappedPatchedPlugin}`);
+        break;
+      } else {
+        // Wrap the module in a function
+        const wrappedPatchedPlugin = `( ${moduleRaw} ).apply(this, arguments) //# sourceURL=${moduleId}`;
+        wp__webpack_require__.m[moduleId] = new Function(`${wrappedPatchedPlugin}`);
+      }
+    }
+  }
+}
+
+wp__webpack_require__.load();
+
+
