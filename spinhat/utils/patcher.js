@@ -103,7 +103,9 @@ async function patch(resourceDir, patchDir) {
 
 async function pnpmInstall(dir) {
   console.log("Installing dependencies...");
-  const exec = child_process.spawn("pnpm", ["install"], { cwd: dir });
+  const exec = child_process.spawn(/^win/.test(process.platform) ? 'pnpm.cmd' : 'pnpm', ['install'], {
+    cwd: dir,
+  });
 
   exec.stdout.pipe(process.stdout);
   exec.stderr.pipe(process.stderr);
@@ -166,6 +168,7 @@ async function installPnpm() {
  */
 function checkInstalled() {
   console.log("Checking if node, npm and pnpm are installed...");
+  // TODO: Version check
   try {
     child_process.execSync("node -v");
   } catch (e) {
