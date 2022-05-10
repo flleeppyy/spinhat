@@ -1,14 +1,12 @@
 <div align="center">
 
-<img src="resources/Spinhat Github Banner_transparent.png">
-
-# Spinhat
+<img src="resources/Spinhat Banner.png" alt="Spinhat Logo">
 
 Reason+ Companion Improvement Project
 
-![GitHub Repo stars](https://img.shields.io/github/stars/flleeppyy/spinhat?label=Stars)
+![GitHub Repo Stars](https://img.shields.io/github/stars/flleeppyy/spinhat?label=Stars)
 [![Discord](https://img.shields.io/discord/829993555820019773?label=Discord)](https://discord.gg/AYC7jCCjqR)
-<!-- ![License](https://img.shields.io/badge/license-GPLv3-blue.svg?label=License) -->
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?label=License)](/LICENSE)
 
 </div>
 
