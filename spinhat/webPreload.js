@@ -9,7 +9,6 @@ const baseAsarPath = path.join(process.cwd(), "resources", "app.asar");
 const preloadFilePath = path.join(baseAsarPath, "build", "preload.js");
 const clientFilePath = path.join(baseAsarPath, "build", "client", "client.js");
 
-
 global.spinhat = {
   plugins: {},
 };
@@ -86,7 +85,7 @@ try {
 // console.log(wp__webpack_require__);
 for (const patch of patches) {
   if (patch.for === "webpreload") {
-    if (patch.moduleMatch && (typeof patch.moduleMatch !== "string" && !(patch.moduleMatch instanceof RegExp))) {
+    if (patch.moduleMatch && typeof patch.moduleMatch !== "string" && !(patch.moduleMatch instanceof RegExp)) {
       console.error("Invalid moduleMatch for patch: " + patch.module);
       continue;
     }
@@ -107,5 +106,3 @@ for (const patch of patches) {
 }
 
 wp__webpack_require__.load();
-
-

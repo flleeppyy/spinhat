@@ -103,7 +103,7 @@ async function patch(resourceDir, patchDir) {
 
 async function pnpmInstall(dir) {
   console.log("Installing dependencies...");
-  const exec = child_process.spawn(/^win/.test(process.platform) ? 'pnpm.cmd' : 'pnpm', ['install'], {
+  const exec = child_process.spawn(/^win/.test(process.platform) ? "pnpm.cmd" : "pnpm", ["install"], {
     cwd: dir,
   });
 
